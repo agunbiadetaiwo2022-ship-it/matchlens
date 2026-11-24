@@ -2,9 +2,8 @@ export default async function handler(req, res) {
   res.setHeader("Content-Type", "application/json; charset=utf-8");
 
   if (req.method !== "GET") {
-    res.setHeader("Allow", "GET");
     return res.status(405).json({
-      error: "Method not allowed. Use GET."
+      error: "Method not allowed."
     });
   }
 
@@ -12,43 +11,38 @@ export default async function handler(req, res) {
     const apiKey = process.env.APISPORTS_KEY;
 
     if (!apiKey) {
-      console.error("[team-form] Missing APISPORTS_KEY");
-
       return res.status(500).json({
         error: "Football API key is not configured."
       });
     }
 
-    let team = "";
-
-    if (req.query && req.query.team !== undefined) {
-      team = String(req.query.team).trim();
-    } else {
-      const requestUrl = new URL(
-        req.url || "/",
-        "https://matchlens.local"
-      );
-
-      team = String(
-        requestUrl.searchParams.get("team") || ""
-      ).trim();
-    }
+    const team = String(req.query?.team || "").trim();
 
     if (!/^\d+$/.test(team)) {
       return res.status(400).json({
-        error: "A numeric team ID is required."
+        error: "A valid numeric team ID is required."
       });
     }
+
+    // Calculate the date range: previous 120 days.
+    const today = new Date();
+    const fromDate = new Date(today);
+
+    fromDate.setDate(fromDate.getDate() - 120);
+
+    const formatDate = date =>
+      date.toISOString().split("T")[0];
 
     const apiUrl = new URL(
       "https://v3.football.api-sports.io/fixtures"
     );
 
     apiUrl.searchParams.set("team", team);
-    apiUrl.searchParams.set("last", "5");
+    apiUrl.searchParams.set("from", formatDate(fromDate));
+    apiUrl.searchParams.set("to", formatDate(today));
     apiUrl.searchParams.set("timezone", "Africa/Lagos");
 
-    const upstream = await fetch(apiUrl.toString(), {
+    const response = await fetch(apiUrl.toString(), {
       method: "GET",
       headers: {
         "x-apisports-key": apiKey,
@@ -56,34 +50,21 @@ export default async function handler(req, res) {
       }
     });
 
-    const rawBody = await upstream.text();
+    const rawBody = await response.text();
 
     let data;
 
     try {
       data = JSON.parse(rawBody);
-    } catch (error) {
-      console.error(
-        "[team-form] Invalid provider response:",
-        rawBody.slice(0, 300)
-      );
-
+    } catch {
       return res.status(502).json({
-        error: "Football provider returned an unreadable response.",
-        providerStatus: upstream.status
+        error: "Football provider returned an invalid response."
       });
     }
 
-    if (!upstream.ok) {
-      console.error(
-        "[team-form] Provider HTTP error:",
-        upstream.status,
-        data.errors
-      );
-
+    if (!response.ok) {
       return res.status(502).json({
         error: "Football provider returned an error.",
-        providerStatus: upstream.status,
         details: data.errors || null
       });
     }
@@ -92,33 +73,23 @@ export default async function handler(req, res) {
       data.errors &&
       Object.keys(data.errors).length > 0
     ) {
-      console.error(
-        "[team-form] API-Football errors:",
-        data.errors
-      );
-
       return res.status(502).json({
         error: "API-Football reported an issue.",
         details: data.errors
       });
     }
 
-    const fixtures = Array.isArray(data.response)
+    const completed = (Array.isArray(data.response)
       ? data.response
-      : [];
-
-    const completed = fixtures
-      .filter(item =>
-        item &&
-        item.fixture &&
-        item.fixture.status &&
+      : [])
+      .filter(match =>
         ["FT", "AET", "PEN"].includes(
-          item.fixture.status.short
+          match.fixture?.status?.short
         )
       )
       .sort((a, b) =>
-        new Date(b.fixture.date).getTime() -
-        new Date(a.fixture.date).getTime()
+        new Date(b.fixture.date) -
+        new Date(a.fixture.date)
       )
       .slice(0, 5);
 
@@ -130,16 +101,11 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(
-      "[team-form] Unexpected error:",
-      error
-    );
+    console.error("[team-form] Error:", error);
 
     return res.status(500).json({
-      error: "Team Form service encountered a server error.",
-      detail: error && error.message
-        ? error.message
-        : "Unknown server error"
+      error: "Team Form server error.",
+      detail: error.message
     });
   }
-        }
+  }
