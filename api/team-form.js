@@ -38,6 +38,7 @@ export default async function handler(req, res) {
     );
 
     apiUrl.searchParams.set("team", team);
+    apiUrl.searchParams.set("season", String(today.getFullYear()));
     apiUrl.searchParams.set("from", formatDate(fromDate));
     apiUrl.searchParams.set("to", formatDate(today));
     apiUrl.searchParams.set("timezone", "Africa/Lagos");
@@ -79,9 +80,9 @@ export default async function handler(req, res) {
       });
     }
 
-    const completed = (Array.isArray(data.response)
-      ? data.response
-      : [])
+    const completed = (
+      Array.isArray(data.response) ? data.response : []
+    )
       .filter(match =>
         ["FT", "AET", "PEN"].includes(
           match.fixture?.status?.short
@@ -108,4 +109,4 @@ export default async function handler(req, res) {
       detail: error.message
     });
   }
-  }
+}
