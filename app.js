@@ -49,11 +49,18 @@ function render(items) {
     return `<article class="match-card">
       <div class="match-meta"><span>${esc(item.league?.name || "Competition")}</span><span>${esc(time)}</span></div>
       <div class="match-teams">
-        <div class="team"><img src="${esc(home.logo || "")}" alt=""><span>${esc(home.name || "Home")}</span></div>
+        <div class="team team-column">
+          <div class="team-identity"><img src="${esc(home.logo || "")}" alt=""><span>${esc(home.name || "Home")}</span></div>
+          <button class="form-button" data-team-id="${esc(home.id)}" data-team-name="${esc(home.name)}">Last 5 matches</button>
+        </div>
         <strong class="match-score">${esc(score)}</strong>
-        <div class="team away"><img src="${esc(away.logo || "")}" alt=""><span>${esc(away.name || "Away")}</span></div>
+        <div class="team team-column away">
+          <div class="team-identity"><img src="${esc(away.logo || "")}" alt=""><span>${esc(away.name || "Away")}</span></div>
+          <button class="form-button" data-team-id="${esc(away.id)}" data-team-name="${esc(away.name)}">Last 5 matches</button>
+        </div>
       </div>
       <div class="match-meta"><span>${esc(fixture.venue?.name || "")}</span><span>${esc(status.long || "")}</span></div>
+      <div class="form-panel" hidden></div>
     </article>`;
   }).join("");
 }
@@ -66,6 +73,67 @@ function applyCompetitionFilter() {
   render(filtered);
   const label = selected === "all" ? "all competitions" : selected;
   statusLine.textContent = `${filtered.length} fixtures · ${label} · Data from API-Football`;
+}
+
+async function showTeamForm(button) {
+  const card = button.closest(".match-card");
+  const panel = card.querySelector(".form-panel");
+  const teamId = button.dataset.teamId;
+  const teamName = button.dataset.teamName || "Team";
+  if (!teamId || !/^\d+$/.test(teamId)) {
+    panel.hidden = false;
+    panel.textContent = "Team information is unavailable for this fixture.";
+    return;
+  }
+  if (!panel.hidden && panel.dataset.teamId === teamId) {
+    panel.hidden = true;
+    return;
+  }
+  card.querySelectorAll(".form-button").forEach(item => item.classList.remove("active"));
+  button.classList.add("active");
+  panel.hidden = false;
+  panel.dataset.teamId = teamId;
+  panel.innerHTML = `<p class="form-loading">Loading ${esc(teamName)}'s recent results…</p>`;
+  try {
+    const response = await fetch(`/api/team-form?team=${encodeURIComponent(teamId)}`);
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Could not load recent results.");
+    const games = Array.isArray(data.results) ? data.results : [];
+    if (!games.length) {
+      panel.innerHTML = `<strong>${esc(teamName)} · Last 5 matches</strong><p class="muted">No recent completed matches were returned for this team.</p>`;
+      return;
+    }
+    const rows = games.map(game => {
+      const fixture = game.fixture || {};
+      const teams = game.teams || {};
+      const goals = game.goals || {};
+      const isHome = Number(teams.home?.id) === Number(teamId);
+      const opponent = isHome ? teams.away : teams.home;
+      const scored = isHome ? goals.home : goals.away;
+      const conceded = isHome ? goals.away : goals.home;
+      let outcome = "D";
+      if (scored > conceded) outcome = "W";
+      if (scored < conceded) outcome = "L";
+      const date = fixture.date ? new Date(fixture.date).toLocaleDateString("en-NG", {
+        day: "2-digit", month: "short", year: "numeric", timeZone: "Africa/Lagos"
+      }) : "";
+      return `<div class="form-result">
+        <span class="form-badge ${outcome.toLowerCase()}">${outcome}</span>
+        <span class="form-opponent">${isHome ? "vs" : "@"} ${esc(opponent?.name || "Opponent")}</span>
+        <strong>${esc(scored)} - ${esc(conceded)}</strong>
+        <small>${esc(date)}</small>
+      </div>`;
+    }).join("");
+    const wins = games.filter(game => {
+      const isHome = Number(game.teams?.home?.id) === Number(teamId);
+      return isHome ? game.goals?.home > game.goals?.away : game.goals?.away > game.goals?.home;
+    }).length;
+    const draws = games.filter(game => game.goals?.home === game.goals?.away).length;
+    const losses = games.length - wins - draws;
+    panel.innerHTML = `<div class="form-heading"><strong>${esc(teamName)} · Last ${games.length} completed matches</strong><span class="form-summary">${wins}W · ${draws}D · ${losses}L</span></div>${rows}<p class="form-footnote">Recent results across competitions, where available. W = win, D = draw, L = loss.</p>`;
+  } catch (error) {
+    panel.innerHTML = `<strong>${esc(teamName)} · Recent form</strong><p class="muted">${esc(error.message)} Check API-Football plan coverage or try again later.</p>`;
+  }
 }
 
 async function loadMatches() {
@@ -86,6 +154,10 @@ async function loadMatches() {
   }
 }
 
+list.addEventListener("click", event => {
+  const button = event.target.closest(".form-button");
+  if (button) showTeamForm(button);
+});
 dateField.value = lagosDate();
 document.querySelector("#load-matches").addEventListener("click", loadMatches);
 competitionFilter.addEventListener("change", applyCompetitionFilter);
