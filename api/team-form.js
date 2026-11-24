@@ -24,7 +24,6 @@ export default async function handler(req, res) {
       });
     }
 
-    // Calculate the date range: previous 120 days.
     const today = new Date();
     const fromDate = new Date(today);
 
@@ -33,12 +32,14 @@ export default async function handler(req, res) {
     const formatDate = date =>
       date.toISOString().split("T")[0];
 
+    const currentSeason = today.getFullYear();
+
     const apiUrl = new URL(
       "https://v3.football.api-sports.io/fixtures"
     );
 
     apiUrl.searchParams.set("team", team);
-    apiUrl.searchParams.set("season", String(today.getFullYear()));
+    apiUrl.searchParams.set("season", String(currentSeason));
     apiUrl.searchParams.set("from", formatDate(fromDate));
     apiUrl.searchParams.set("to", formatDate(today));
     apiUrl.searchParams.set("timezone", "Africa/Lagos");
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       return res.status(502).json({
         error: "Football provider returned an error.",
+        providerStatus: response.status,
         details: data.errors || null
       });
     }
@@ -96,6 +98,7 @@ export default async function handler(req, res) {
 
     return res.status(200).json({
       team: Number(team),
+      season: currentSeason,
       results: completed,
       count: completed.length,
       provider: "API-Football"
@@ -109,4 +112,4 @@ export default async function handler(req, res) {
       detail: error.message
     });
   }
-}
+        }
