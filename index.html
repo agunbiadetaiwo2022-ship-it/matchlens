@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#090909" />
+  <meta name="description" content="MatchLens — football, understood beyond the scoreboard." />
+  <title>MatchLens | See Beyond the Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="MatchLens home">
+      <span class="brand-mark">M<span>L</span></span>
+      <span class="brand-name">MATCH<span>LENS</span><small>SEE BEYOND THE GAME</small></span>
+    </a>
+    <nav>
+      <a class="active" href="#home">Home</a>
+      <a href="#matches">Matches</a>
+      <a href="#analysis">Analysis</a>
+      <a href="#news">News</a>
+    </nav>
+    <a class="header-cta" href="#matches">Explore matches <span>↗</span></a>
+  </header>
+
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-copy">
+        <p class="eyebrow"><span></span> FOOTBALL. DATA. INTELLIGENCE.</p>
+        <h1>SEE BEYOND<br>THE <em>GAME.</em></h1>
+        <p class="hero-text">The stories, numbers and insights behind every match. Football is more than the final score — get a clearer view with MatchLens.</p>
+        <div class="hero-actions">
+          <a class="button gold-button" href="#matches">Explore matches <span>→</span></a>
+          <a class="text-link" href="#analysis">Discover our analysis</a>
+        </div>
+      </div>
+      <div class="hero-visual" aria-label="Abstract football pitch graphic">
+        <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+        <div class="pitch">
+          <div class="halfway"></div><div class="center-circle"></div>
+          <div class="box left-box"></div><div class="box right-box"></div>
+          <div class="spot left-spot"></div><div class="spot right-spot"></div>
+          <div class="lens">ML</div>
+        </div>
+        <div class="visual-label"><b>01 / 03</b><span>THE MATCH, IN FOCUS</span></div>
+      </div>
+    </section>
+
+    <section class="ticker"><span>THE GAME NEVER STOPS</span><i>✦</i><span>INSIGHT OVER NOISE</span><i>✦</i><span>SEE BEYOND THE SCORE</span><i>✦</i><span>THE GAME NEVER STOPS</span></section>
+
+    <section class="section" id="matches">
+      <div class="section-heading">
+        <div><p class="eyebrow">YOUR DAILY FOOTBALL FIX</p><h2>THE MATCH <em>CENTRE</em></h2></div>
+        <span class="demo-tag">PREVIEW · SAMPLE CONTENT</span>
+      </div>
+      <div class="match-grid">
+        <article class="match-card featured">
+          <div class="card-top"><span class="live-dot"></span> FEATURED FIXTURE <span class="league">ENGLISH PREMIER LEAGUE</span></div>
+          <div class="teams"><div class="team"><div class="team-badge">ARS</div><b>Arsenal</b></div><span class="versus">VS</span><div class="team"><div class="team-badge">LIV</div><b>Liverpool</b></div></div>
+          <div class="match-meta"><span>Fixture preview</span><span>Kick-off: TBC</span></div>
+          <p class="sample-note">Illustrative match card. Live fixtures will appear here after a data provider is connected.</p>
+        </article>
+        <article class="match-card">
+          <div class="card-top">COMING SOON <span class="league">MATCH DATA</span></div>
+          <h3>Live scores</h3><p>Follow matches as they happen, with score updates and match status.</p>
+          <span class="card-icon">◉</span>
+        </article>
+        <article class="match-card">
+          <div class="card-top">COMING SOON <span class="league">TEAM DATA</span></div>
+          <h3>Fixtures & results</h3><p>Browse upcoming games, completed results and competition schedules.</p>
+          <span class="card-icon">▦</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="analysis-band" id="analysis">
+      <div><p class="eyebrow">NUMBERS WITH CONTEXT</p><h2>DON'T JUST WATCH.<br><em>UNDERSTAND.</em></h2></div>
+      <p>Our goal is to turn football data into clear, useful insight — from team form and goal trends to match previews and tactical talking points.</p>
+      <a class="button outline-button" href="#news">Explore the approach <span>→</span></a>
+    </section>
+
+    <section class="section news-section" id="news">
+      <div class="section-heading"><div><p class="eyebrow">THE LATEST FROM THE GAME</p><h2>IN THE <em>SPOTLIGHT</em></h2></div><span class="demo-tag">EDITORIAL SECTION</span></div>
+      <div class="news-grid">
+        <article class="news-card"><div class="news-art art-one">90<span>′</span></div><div class="news-copy"><span>TACTICS · 4 MIN READ</span><h3>What makes a great midfield control a game?</h3><p>Breaking down the space, tempo and decisions that shape the middle of the pitch.</p></div></article>
+        <article class="news-card"><div class="news-art art-two">FORM<br>MATTERS</div><div class="news-copy"><span>ANALYSIS · 3 MIN READ</span><h3>Looking beyond a team's last result</h3><p>Why performance trends can tell a more useful story than a single scoreline.</p></div></article>
+        <article class="news-card"><div class="news-art art-three">THE<br>BIG PICTURE</div><div class="news-copy"><span>THE GAME · 5 MIN READ</span><h3>Football is more than numbers</h3><p>Using statistics as a lens, while keeping the human side of football in view.</p></div></article>
+      </div>
+    </section>
+  </main>
+
+  <footer><a class="brand footer-brand" href="#"><span class="brand-mark">M<span>L</span></span><span class="brand-name">MATCH<span>LENS</span><small>SEE BEYOND THE GAME</small></span></a><p>Football, understood beyond the scoreboard.</p><span class="copyright">© <span id="year"></span> MATCHLENS</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>
