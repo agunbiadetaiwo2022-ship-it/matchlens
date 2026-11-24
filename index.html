@@ -19,21 +19,27 @@
       <p>Football news, match insights and data-led analysis — all in one place.</p>
       <a class="button" href="#matches">Explore matches</a>
     </section>
-
     <section class="section" id="matches">
       <div class="section-heading">
-        <div><p class="eyebrow">MATCH CENTRE</p><h2>Fixtures & live scores</h2><p class="muted">Choose a date. Match times are shown in Nigerian time.</p></div>
-        <div class="controls"><input id="match-date" type="date"><button id="load-matches" class="button">Load matches</button></div>
+        <div><p class="eyebrow">MATCH CENTRE</p><h2>Fixtures & live scores</h2><p class="muted">Choose a date and competition. Match times are shown in Nigerian time.</p></div>
+        <div class="controls">
+          <input id="match-date" type="date">
+          <button id="load-matches" class="button">Load matches</button>
+        </div>
+      </div>
+      <div class="filter-row">
+        <label for="competition-filter">Competition</label>
+        <select id="competition-filter" aria-label="Filter matches by competition">
+          <option value="all">All competitions</option>
+        </select>
       </div>
       <p id="match-status" class="muted" aria-live="polite">Loading fixtures…</p>
       <div id="match-list" class="match-grid"></div>
     </section>
-
     <section class="section split" id="analysis">
       <div><p class="eyebrow">BEYOND THE SCORELINE</p><h2>Understand the game.<br><span class="gold">Read the numbers.</span></h2></div>
       <p class="muted">MatchLens brings team form, head-to-head records and match statistics together to support smarter football conversations and analysis.</p>
     </section>
-
     <section class="section" id="news">
       <p class="eyebrow">THE MATCHLENS VIEW</p><h2>Football, with context.</h2>
       <div class="news-grid"><article><span class="tag">NEWS</span><h3>Football stories that matter</h3><p class="muted">News and developments from the world of football.</p></article><article><span class="tag">ANALYSIS</span><h3>More than a prediction</h3><p class="muted">Look at form, performance and the details behind every fixture.</p></article><article><span class="tag">DATA</span><h3>Numbers in perspective</h3><p class="muted">A growing home for football statistics and match insights.</p></article></div>
