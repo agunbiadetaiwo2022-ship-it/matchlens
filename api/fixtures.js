@@ -1,257 +1,265 @@
 
-const NINJA_LEAGUES = [
-  "epl",
-  "laliga",
-  "bundesliga",
-  "seriea",
-  "ligue1",
-  "ucl",
-  "uel",
-  "uecl",
-  "afcon",
-  "mls"
+const API_FOOTBALL_URL = "https://v3.football.api-sports.io/fixtures";
+const API_NINJAS_URL = "https://api.api-ninjas.com/v1/soccermatches";
+
+const LEAGUES = [
+  "epl", "laliga", "bundesliga", "seriea", "ligue1",
+  "ucl", "uel", "mls", "championship", "leagueone",
+  "leaguetwo", "scottishpremiership", "laliga2",
+  "bundesliga2", "serieb", "ligue2", "eredivisie",
+  "primeiraliga", "superlig", "belgianproleague",
+  "greeksuperleague", "austrianbundesliga",
+  "danishsuperliga", "allsvenskan", "eliteserien",
+  "rpl", "uecl", "brasileirao", "libertadores",
+  "sudamericana", "uslc", "saudiproleague", "csl",
+  "isl", "aleague", "acl", "cafcl", "ligamx",
+  "ligaprofesional", "j1league", "facup", "eflcup",
+  "copadelrey", "dfbpokal", "coppaitalia",
+  "coupedefrance", "usopencup", "leaguescup",
+  "concacafcc", "clubworldcup", "wsl", "ligaf",
+  "premiereligue", "aleaguewomen", "nsl",
+  "uslsuperleague", "uwcl", "worldcup", "wcqeurope",
+  "wcqsouthamerica", "wcqnorthamerica", "wcqasia",
+  "wcqafrica", "nationsleague", "euro",
+  "euroqualifying", "copaamerica", "afcon"
 ];
 
-const LEAGUE_NAMES = {
-  epl: "Premier League",
-  laliga: "La Liga",
-  bundesliga: "Bundesliga",
-  seriea: "Serie A",
-  ligue1: "Ligue 1",
-  ucl: "UEFA Champions League",
-  uel: "UEFA Europa League",
-  uecl: "UEFA Conference League",
-  afcon: "Africa Cup of Nations",
-  mls: "MLS"
-};
-
-function normalizeNinja(game) {
-  const status = String(game.status || "scheduled").toLowerCase();
-
-  let short = "NS";
-
-  if (["live", "in_progress", "in progress"].includes(status)) {
-    short = "LIVE";
-  } else if (["finished", "final", "completed"].includes(status)) {
-    short = "FT";
-  } else if (["postponed"].includes(status)) {
-    short = "PST";
-  } else if (["cancelled", "canceled"].includes(status)) {
-    short = "CANC";
-  }
-
-  return {
-    fixture: {
-      id: game.game_id,
-      date: game.start_time,
-      status: {
-        short,
-        long: status,
-        elapsed: null
-      },
-      venue: {
-        name: game.venue?.name || ""
-      }
-    },
-    league: {
-      id: game.league,
-      name: LEAGUE_NAMES[game.league] || game.league,
-      country: game.venue?.country || ""
-    },
-    teams: {
-      home: {
-        id: game.home_team?.team_id,
-        name: game.home_team?.name || "Home",
-        logo: null
-      },
-      away: {
-        id: game.away_team?.team_id,
-        name: game.away_team?.name || "Away",
-        logo: null
-      }
-    },
-    goals: {
-      home: game.home_score ?? null,
-      away: game.away_score ?? null
-    },
-    source: "API Ninjas"
-  };
-}
-
-function matchKey(item) {
-  const home = item.teams?.home?.name || "";
-  const away = item.teams?.away?.name || "";
-  const date = item.fixture?.date || "";
-
-  return [
-    date.slice(0, 10),
-    home.toLowerCase().trim(),
-    away.toLowerCase().trim()
-  ].join("|");
-}
-
-export default async function handler(req, res) {
-  const apiSportsKey = process.env.APISPORTS_KEY;
-  const ninjaKey = process.env.NINJA_API_KEY;
-
-  const lagosToday = new Intl.DateTimeFormat("en-CA", {
+function getLagosDate() {
+  return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Africa/Lagos",
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
   }).format(new Date());
+}
 
-  const date =
-    typeof req.query.date === "string" && req.query.date.trim()
-      ? req.query.date.trim()
-      : lagosToday;
+function normalizeNinja(game) {
+  return {
+    ...game,
+    fixture_id: game.game_id,
+    provider: "API Ninjas",
+    home_name: game.home_team?.name || "",
+    away_name: game.away_team?.name || "",
+    home_team_name: game.home_team?.name || "",
+    away_team_name: game.away_team?.name || "",
+    home_score: game.home_score ?? null,
+    away_score: game.away_score ?? null,
+    date: game.date,
+    start_time: game.start_time,
+    league: game.league,
+    status: game.status || "scheduled"
+  };
+}
+
+function normalizeFootball(game) {
+  const fixture = game.fixture || {};
+  const teams = game.teams || {};
+  const goals = game.goals || {};
+  const league = game.league || {};
+
+  return {
+    fixture_id: fixture.id,
+    provider: "API-Football",
+    game_id: String(fixture.id),
+    league: league.name || "",
+    league_id: league.id,
+    sport: "soccer",
+    date: fixture.date?.slice(0, 10),
+    start_time: fixture.date,
+    timestamp: fixture.timestamp,
+    status: fixture.status?.short || "",
+    home_name: teams.home?.name || "",
+    away_name: teams.away?.name || "",
+    home_team_name: teams.home?.name || "",
+    away_team_name: teams.away?.name || "",
+    home_score: goals.home ?? null,
+    away_score: goals.away ?? null,
+    venue: fixture.venue?.name || "",
+    round: league.round || ""
+  };
+}
+
+function matchKey(item) {
+  if (item.game_id && item.provider === "API Ninjas") {
+    return item.game_id;
+  }
+
+  return [
+    item.date,
+    (item.home_name || "").toLowerCase().trim(),
+    (item.away_name || "").toLowerCase().trim()
+  ].join("-");
+}
+
+async function getNinjaFixtures(date) {
+  const key = process.env.API_NINJAS_KEY;
+
+  if (!key) {
+    throw new Error("API_NINJAS_KEY is missing");
+  }
+
+  const results = [];
+  const errors = [];
+
+  // Five simultaneous requests at a time.
+  for (let i = 0; i < LEAGUES.length; i += 5) {
+    const batch = LEAGUES.slice(i, i + 5);
+
+    const responses = await Promise.all(
+      batch.map(async (league) => {
+        try {
+          const url = new URL(API_NINJAS_URL);
+          url.searchParams.set("league", league);
+          url.searchParams.set("date", date);
+
+          const response = await fetch(url, {
+            headers: {
+              "X-Api-Key": key
+            }
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error || `HTTP ${response.status}`
+            );
+          }
+
+          if (!Array.isArray(data)) {
+            throw new Error("Invalid API Ninjas response");
+          }
+
+          return data.map(normalizeNinja);
+        } catch (error) {
+          errors.push({
+            provider: "API Ninjas",
+            league,
+            error: error.message
+          });
+
+          return [];
+        }
+      })
+    );
+
+    for (const group of responses) {
+      results.push(...group);
+    }
+  }
+
+  return { results, errors };
+}
+
+async function getFootballFixtures(date) {
+  const key = process.env.APISPORTS_KEY;
+
+  if (!key) {
+    throw new Error("APISPORTS_KEY is missing");
+  }
+
+  const url = new URL(API_FOOTBALL_URL);
+
+  url.searchParams.set("date", date);
+  url.searchParams.set("timezone", "Africa/Lagos");
+
+  const response = await fetch(url, {
+    headers: {
+      "x-apisports-key": key
+    }
+  });
+
+  const data = await response.json();
+
+  if (!response.ok || data.errors &&
+      Object.keys(data.errors).length > 0) {
+    throw new Error(
+      JSON.stringify(data.errors || data.message || "API-Football failed")
+    );
+  }
+
+  return (data.response || []).map(normalizeFootball);
+}
+
+export default async function handler(req, res) {
+  if (req.method !== "GET") {
+    return res.status(405).json({
+      error: "Method not allowed"
+    });
+  }
+
+  const date = req.query.date || getLagosDate();
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     return res.status(400).json({
-      error: "Date must use YYYY-MM-DD format."
+      error: "Invalid date. Use YYYY-MM-DD"
     });
   }
 
-  const tasks = [];
-
-  if (apiSportsKey) {
-    tasks.push(
-      (async () => {
-        const url = new URL(
-          "https://v3.football.api-sports.io/fixtures"
-        );
-
-        url.searchParams.set("date", date);
-        url.searchParams.set("timezone", "Africa/Lagos");
-
-        const response = await fetch(url.toString(), {
-          headers: {
-            "x-apisports-key": apiSportsKey
-          }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok || (
-          data.errors && Object.keys(data.errors).length
-        )) {
-          throw new Error("API-Football request failed.");
-        }
-
-        return Array.isArray(data.response)
-          ? data.response.map(item => ({
-              ...item,
-              source: "API-Football"
-            }))
-          : [];
-      })()
-    );
-  }
-
-  if (ninjaKey) {
-    tasks.push(
-      (async () => {
-        const url = new URL(
-          "https://api.api-ninjas.com/v1/soccermatches"
-        );
-
-        url.searchParams.set(
-          "leagues",
-          NINJA_LEAGUES.join(",")
-        );
-
-        url.searchParams.set("date", date);
-
-        const response = await fetch(url.toString(), {
-          headers: {
-            "X-Api-Key": ninjaKey
-          }
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error("API Ninjas request failed.");
-        }
-
-        return Array.isArray(data.fixtures)
-          ? data.fixtures.map(normalizeNinja)
-          : [];
-      })()
-    );
-  }
-
-  if (!tasks.length) {
-    return res.status(500).json({
-      error: "No football API keys are configured."
-    });
-  }
-
-  const results = await Promise.allSettled(tasks);
-
-  let apiFootballFixtures = [];
-  let ninjaFixtures = [];
+  const results = [];
   const errors = [];
+  const providers = [];
 
-  let index = 0;
-
-  if (apiSportsKey) {
-    const result = results[index++];
-
-    if (result.status === "fulfilled") {
-      apiFootballFixtures = result.value;
-    } else {
-      errors.push("API-Football unavailable");
-    }
-  }
-
-  if (ninjaKey) {
-    const result = results[index++];
-
-    if (result.status === "fulfilled") {
-      ninjaFixtures = result.value;
-    } else {
-      errors.push("API Ninjas unavailable");
-    }
-  }
-
-  if (
-    apiFootballFixtures.length === 0 &&
-    ninjaFixtures.length === 0 &&
-    errors.length === tasks.length
-  ) {
-    return res.status(502).json({
-      error: "Both football data providers failed.",
-      details: errors
+  // API-Football
+  try {
+    const football = await getFootballFixtures(date);
+    results.push(...football);
+    providers.push("API-Football");
+  } catch (error) {
+    errors.push({
+      provider: "API-Football",
+      error: error.message
     });
   }
 
-  const combined = [...apiFootballFixtures];
-  const existing = new Set(combined.map(matchKey));
+  // API Ninjas
+  try {
+    const ninja = await getNinjaFixtures(date);
+    results.push(...ninja.results);
+    errors.push(...ninja.errors);
 
-  for (const game of ninjaFixtures) {
-    const key = matchKey(game);
+    if (ninja.results.length > 0) {
+      providers.push("API Ninjas");
+    }
+  } catch (error) {
+    errors.push({
+      provider: "API Ninjas",
+      error: error.message
+    });
+  }
 
-    if (!existing.has(key)) {
-      combined.push(game);
-      existing.add(key);
+  // Remove duplicates
+  const unique = new Map();
+
+  for (const fixture of results) {
+    const key = matchKey(fixture);
+
+    if (!unique.has(key)) {
+      unique.set(key, fixture);
     }
   }
 
-  combined.sort((a, b) =>
-    new Date(a.fixture?.date || 0) -
-    new Date(b.fixture?.date || 0)
+  const finalResults = [...unique.values()].sort(
+    (a, b) => {
+      const timeA = new Date(
+        a.start_time || a.date
+      ).getTime();
+
+      const timeB = new Date(
+        b.start_time || b.date
+      ).getTime();
+
+      return timeA - timeB;
+    }
   );
 
   return res.status(200).json({
     date,
-    results: combined,
-    count: combined.length,
-    providers: {
-      apiFootball: apiFootballFixtures.length,
-      apiNinjas: ninjaFixtures.length
-    },
+    count: finalResults.length,
+    results: finalResults,
+    providers,
     errors
   });
 }
+
 
